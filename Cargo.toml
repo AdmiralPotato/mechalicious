@@ -1,6 +1,7 @@
 [workspace]
-members = [
-    "mechalicious-client",
-    "mechalicious-server",
-    "mechalicious-core"
-]
+    resolver = "2"
+    members = [
+        "mechalicious-client",
+        "mechalicious-server",
+        "mechalicious-core"
+    ]

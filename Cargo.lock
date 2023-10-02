@@ -251,9 +251,9 @@ dependencies = [
 
 [[package]]
 name = "ftvf"
-version = "0.5.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2320b08692c4ba7a370de1aead1ba6b99ae95ad7bd15447172f57fb9b07571d7"
+checksum = "6e9571627ae342b6fe7a4f0f8454a7b8d29daae465ac35a4fab084a14a30bfce"
 
 [[package]]
 name = "futures-core"

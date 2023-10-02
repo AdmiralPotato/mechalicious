@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use ftvf::{Metronome, Mode, RealtimeNowSource, Status};
+use ftvf::{Metronome, Mode, Reading, RealtimeNowSource};
 use psilo_ecs::ecs_iter;
 use vectoracious::Context;
 
@@ -52,29 +52,25 @@ fn main() {
     let mut world = GameWorld::new();
     let mut metronome = Metronome::new(
         RealtimeNowSource::new(),
-        (5, 1), // want 5 ticks per 1 second
-        5,      // accept being up to 5 ticks behind
+        ftvf::Rate::per_second(5, 1), // want 5 ticks per 1 second
+        5,                            // accept being up to 5 ticks behind
     );
     let mut model_registry =
         ModelRegistry::new(PathBuf::from("mechalicious-client/data".to_string()));
     while !should_quit {
         //TODO:world.handle_input();
         // call `sample` once per batch. not zero times, not two or more times!
-        metronome.sample();
-        while let Some(status) = metronome.status(Mode::UnlimitedFrames) {
-            match status {
-                Status::Tick => world.tick(),
-                Status::Frame { phase } => {
+        for reading in metronome.sample(Mode::UnlimitedFrames) {
+            match reading {
+                Reading::Tick => world.tick(),
+                Reading::Frame { phase } => {
                     render(&mut vectoracious, &mut world, &mut model_registry, phase)
                 }
-                Status::TimeWentBackwards => eprintln!("Warning: time flowed backwards!"),
-                Status::TicksLost(n) => eprintln!("Warning: we're too slow, lost {} ticks!", n),
-                // No special handling or warning message is needed for Rollover. In
-                // practice, it will never be seen.
-                Status::Rollover => (),
+                Reading::TimeWentBackwards => eprintln!("Warning: time flowed backwards!"),
+                Reading::TicksLost => eprintln!("Warning: we're too slow, lost some ticks!"),
                 // Mode::UnlimitedFrames never returns Idle, but other modes can, and
                 // this is the way it should be handled.
-                Status::Idle => metronome.sleep_until_next_tick(),
+                Reading::Idle { duration } => std::thread::sleep(duration),
             }
         }
     }

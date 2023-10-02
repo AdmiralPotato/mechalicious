@@ -20,15 +20,21 @@ fn render(
     render.clear(0.2, 0.05, 0.1, 0.0);
     println!("\n\x1B[1mWE ARE RENDERING! phase = {phase}\x1B[0m");
     world.with_ecs_world(|ecs_world| {
-        for (entity_id, placement, old_placement, visible) in ecs_iter!(ecs_world, cur components::Placement, prev components::Placement, cur components::Visible)
-        {
+        for (entity_id, placement, old_placement, visible) in ecs_iter!(
+                ecs_world,
+                cur components::Placement,
+                prev components::Placement,
+                cur components::Visible,
+        ) {
             render.model(
                 model_registry.get_model(visible.model_path),
                 &placement.to_phased_transform(&old_placement, phase),
                 &[],
                 1.0,
             );
-            println!("\tEntity: entity_id={entity_id}, placement={placement:?}, visible={visible:?})");
+            println!(
+                "\tEntity: entity_id={entity_id}, placement={placement:?}, visible={visible:?})"
+            );
         }
     });
     let mut render = render.begin_ui();
@@ -46,9 +52,9 @@ fn main() {
     let mut world = GameWorld::new();
     let mut metronome = Metronome::new(
         RealtimeNowSource::new(),
-        (5, 1), // want 30 ticks per 1 second
-        5,
-    ); // accept being up to 5 ticks behind
+        (5, 1), // want 5 ticks per 1 second
+        5,      // accept being up to 5 ticks behind
+    );
     let mut model_registry =
         ModelRegistry::new(PathBuf::from("mechalicious-client/data".to_string()));
     while !should_quit {

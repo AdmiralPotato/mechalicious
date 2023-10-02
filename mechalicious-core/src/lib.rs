@@ -1,4 +1,4 @@
-use std::f32::consts::TAU;
+use std::f32::consts::{PI, TAU};
 
 use psilo_ecs::*;
 
@@ -12,17 +12,31 @@ pub type Similarity = nalgebra::Similarity2<f32>;
 
 Note for future Admiral: If you find yourself needing to turn a Point into a
 Vector, (for instance, when averaging points) use my_point.coords instead of
-my_point.into(). my_point.coords will just give you the coordinates, as a vector. .into() will convert it into a *homogenous* vector, `x, y, 1`.
+my_point.into(). my_point.coords will just give you the coordinates, as a vector. my_point.into() will convert it into a *homogenous* vector, `x, y, 1`.
 
 */
 
 // if we do: pub mod components
 // then our dependencies can use: mechalicious_core::components::Position
 // but if we do: pub use components::*
-// then our dependencies can use: mechalicious_core::Position
+// then our dependencies can also use: mechalicious_core::Position
 
 pub mod components;
 use components::*;
+
+pub fn angle_lerp(a: f32, b: f32, theta: f32) -> f32 {
+    let delta = b - a;
+    let delta = if delta.abs() >= PI {
+        if delta > 0.0 {
+            delta - TAU
+        } else {
+            delta + TAU
+        }
+    } else {
+        delta
+    };
+    a + (delta * theta)
+}
 
 pub struct GameWorld {
     prev_ecs_world: Arcow<EcsWorld>,
@@ -35,16 +49,16 @@ impl GameWorld {
         ecs_spawn!(
             ecs_world,
             Placement {
-                position: point![69.0, 420.0],
+                position: point![-1.0, -1.0],
                 angle: 7.0,
-                scale: 3.0,
+                scale: 0.3,
             },
             Physics {
                 mass: 1.0,
                 moment: 1.0,
                 force: vector![0.0, 0.0],
                 torque: 0.0,
-                velocity: vector![1.0, 0.5],
+                velocity: vector![0.1, 0.1],
                 angular_velocity: 0.0,
             },
             ShipControls {
@@ -90,7 +104,15 @@ impl GameWorld {
         self.prev_ecs_world = self.ecs_world.clone();
         self.ecs_world = self.ecs_world.buffered_tick(|world| {
             // this is where our Systems go
-            for (_, position, physics) in ecs_iter!(world, mut Placement, mut Physics) {
+            // Ship Controls System
+            for (_entity_id, _placement, controls, physics) in
+                ecs_iter!(world, cur Placement, cur ShipControls, mut Physics)
+            {
+                physics.force += controls.movement * 0.5;
+                // TODO: aim
+            }
+            // Physics System
+            for (_entity_id, position, physics) in ecs_iter!(world, mut Placement, mut Physics) {
                 let linear_acceleration = physics.force / physics.mass;
                 let angular_acceleration = physics.torque / physics.moment;
                 position.position += physics.velocity + linear_acceleration * 0.5;

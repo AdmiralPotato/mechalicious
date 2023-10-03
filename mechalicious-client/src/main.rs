@@ -58,7 +58,34 @@ fn main() {
     let mut model_registry =
         ModelRegistry::new(PathBuf::from("mechalicious-client/data".to_string()));
     while !should_quit {
-        //TODO:world.handle_input();
+        for event in event_pump.poll_iter() {
+            use sdl2::event::Event;
+            match event {
+                Event::Quit { .. } => {
+                    should_quit = true;
+                    break;
+                }
+                Event::KeyDown {
+                    keycode: Some(keycode),
+                    keymod,
+                    ..
+                } => {
+                    use sdl2::keyboard::{Keycode, Mod};
+                    match keycode {
+                        Keycode::Escape => {
+                            should_quit = true;
+                            break;
+                        }
+                        Keycode::F4 if keymod.intersects(Mod::LALTMOD | Mod::RALTMOD) => {
+                            should_quit = true;
+                            break;
+                        }
+                        _ => (),
+                    }
+                }
+                _ => (),
+            }
+        }
         // call `sample` once per batch. not zero times, not two or more times!
         let refresh_rate =
             unsafe { sdl2::video::Window::from_ref(vectoracious.get_window_context().0) }

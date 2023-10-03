@@ -60,7 +60,15 @@ fn main() {
     while !should_quit {
         //TODO:world.handle_input();
         // call `sample` once per batch. not zero times, not two or more times!
-        for reading in metronome.sample(Mode::UnlimitedFrames) {
+        let refresh_rate =
+            unsafe { sdl2::video::Window::from_ref(vectoracious.get_window_context().0) }
+                .display_mode()
+                .map(|x| x.refresh_rate)
+                .unwrap_or(60);
+        for reading in metronome.sample(Mode::TargetFramesPerSecond(ftvf::Rate::per_second(
+            refresh_rate as u32,
+            1,
+        ))) {
             match reading {
                 Reading::Tick => world.tick(),
                 Reading::Frame { phase } => {

@@ -46,6 +46,7 @@ pub struct GameWorld {
 impl GameWorld {
     pub fn new() -> GameWorld {
         let mut ecs_world = EcsWorld::with_blank_schema();
+        ecs_spawn!(ecs_world, WorldPhysics { air_thickness: 5.4 },);
         ecs_spawn!(
             ecs_world,
             Placement {
@@ -118,8 +119,10 @@ impl GameWorld {
                 physics.apply_force(controls.movement * 0.005);
             }
             // Physics System
+            let world_physics = ecs_singleton!(world, cur WorldPhysics);
             for (_entity_id, position, physics) in ecs_iter!(world, mut Placement, mut Physics) {
-                let drag_amount = physics.velocity.magnitude_squared() * -0.5;
+                let drag_amount =
+                    physics.velocity.magnitude_squared() * -world_physics.air_thickness;
                 if drag_amount != 0.0 {
                     physics.apply_force(physics.velocity.normalize() * drag_amount);
                 }

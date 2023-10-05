@@ -58,7 +58,7 @@ fn main() {
     );
     let mut model_registry =
         ModelRegistry::new(PathBuf::from("mechalicious-client/data".to_string()));
-    let player_id = 2;
+    let player_id = 3;
     let mut going_left = false;
     let mut going_right = false;
     let mut going_up = false;
@@ -124,7 +124,7 @@ fn main() {
         } else {
             0.0
         };
-        println!("\n\x1B[1mcontrols = {controls:?}\x1B[0m");
+        // println!("\n\x1B[1mcontrols = {controls:?}\x1B[0m");
         // call `sample` once per batch. not zero times, not two or more times!
         let refresh_rate = vectoracious
             .get_window()

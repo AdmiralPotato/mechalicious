@@ -49,3 +49,8 @@ pub struct ShipControls {
     pub aim: Vector,      // right stick
     pub fire: bool,
 }
+
+#[derive(Clone, Debug)]
+pub struct WorldPhysics {
+    pub air_thickness: f32,
+}

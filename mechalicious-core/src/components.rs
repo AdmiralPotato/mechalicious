@@ -32,6 +32,12 @@ pub struct Physics {
     pub angular_velocity: f32,
 }
 
+impl Physics {
+    pub fn apply_force(&mut self, force: Vector) {
+        self.force += force;
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Visible {
     pub model_path: &'static str,

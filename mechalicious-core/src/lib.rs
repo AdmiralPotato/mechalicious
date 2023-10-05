@@ -115,10 +115,14 @@ impl GameWorld {
             for (_entity_id, _placement, controls, physics) in
                 ecs_iter!(world, cur Placement, cur ShipControls, mut Physics)
             {
-                physics.force += controls.movement * 0.005;
+                physics.apply_force(controls.movement * 0.005);
             }
             // Physics System
             for (_entity_id, position, physics) in ecs_iter!(world, mut Placement, mut Physics) {
+                let drag_amount = physics.velocity.magnitude_squared() * -0.5;
+                if drag_amount != 0.0 {
+                    physics.apply_force(physics.velocity.normalize() * drag_amount);
+                }
                 let linear_acceleration = physics.force / physics.mass;
                 let angular_acceleration = physics.torque / physics.moment;
                 position.position += physics.velocity + linear_acceleration * 0.5;

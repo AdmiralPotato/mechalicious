@@ -16,6 +16,8 @@ my_point.into(). my_point.coords will just give you the coordinates, as a vector
 
 */
 
+use rand::prelude::*;
+
 // if we do: pub mod components
 // then our dependencies can use: mechalicious_core::components::Position
 // but if we do: pub use components::*
@@ -95,6 +97,22 @@ impl GameWorld {
                 model_path: "mechalicious.v2d",
             },
         );
+        let mut thread_rng = thread_rng();
+        for _ in 0..600 {
+            let x = thread_rng.gen_range(-10.0..10.0);
+            let y = thread_rng.gen_range(-10.0..10.0);
+            ecs_spawn!(
+                ecs_world,
+                Placement {
+                    position: point![x, y],
+                    angle: thread_rng.gen_range(0.0..TAU),
+                    scale: 0.1,
+                },
+                Visible {
+                    model_path: "mechalicious.v2d",
+                },
+            );
+        }
         let ecs_world = Arcow::new(ecs_world);
         GameWorld {
             prev_ecs_world: ecs_world.clone(),

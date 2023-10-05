@@ -58,7 +58,7 @@ impl GameWorld {
                 moment: 1.0,
                 force: vector![0.0, 0.0],
                 torque: 0.0,
-                velocity: vector![0.1, 0.1],
+                velocity: vector![0.01, 0.01],
                 angular_velocity: 0.0,
             },
             ShipControls {
@@ -75,7 +75,7 @@ impl GameWorld {
             Placement {
                 position: point![0.0, 0.0],
                 angle: 7.0,
-                scale: 1.0,
+                scale: 0.3,
             },
             Physics {
                 mass: 1.0,
@@ -83,7 +83,7 @@ impl GameWorld {
                 force: vector![0.0, 0.0],
                 torque: 0.0,
                 velocity: vector![0.0, 0.0],
-                angular_velocity: 1.0,
+                angular_velocity: 0.01,
             },
             ShipControls {
                 movement: vector![0.0, 0.0],
@@ -100,16 +100,22 @@ impl GameWorld {
             ecs_world,
         }
     }
-    pub fn tick(&mut self) {
+    pub fn tick(&mut self, inputs: &[(EntityId, &ShipControls)]) {
         self.prev_ecs_world = self.ecs_world.clone();
         self.ecs_world = self.ecs_world.buffered_tick(|world| {
             // this is where our Systems go
+            for (entity_id, player_controls) in inputs {
+                if let Some(mut controls) = ecs_get!(world, *entity_id, mut ShipControls) {
+                    (*controls).clone_from(player_controls);
+                } else {
+                    eprintln!("WARNING: missing player {entity_id:?}");
+                }
+            }
             // Ship Controls System
             for (_entity_id, _placement, controls, physics) in
                 ecs_iter!(world, cur Placement, cur ShipControls, mut Physics)
             {
-                physics.force += controls.movement * 0.5;
-                // TODO: aim
+                physics.force += controls.movement * 0.005;
             }
             // Physics System
             for (_entity_id, position, physics) in ecs_iter!(world, mut Placement, mut Physics) {

@@ -1,7 +1,5 @@
 use super::*;
 
-
-
 #[derive(Clone, Debug)]
 pub struct Placement {
     pub position: Point,
@@ -39,7 +37,7 @@ pub struct Visible {
     pub model_path: &'static str,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct ShipControls {
     pub movement: Vector, // left stick
     pub aim: Vector,      // right stick

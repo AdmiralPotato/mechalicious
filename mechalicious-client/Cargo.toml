@@ -10,4 +10,4 @@ ftvf = "0.6.0"
 mechalicious-core = {path = "../mechalicious-core"}
 psilo-ecs = {git="https://github.com/SolraBizna/psilo-ecs", rev="d3c95429240184755684116ca6bfe1af6970d50d"}
 sdl2 = { version="0.35.2", features = ["bundled"] }
-vectoracious = {git="https://github.com/SolraBizna/vectoracious", rev="2d9e365"}
+vectoracious = {git="https://github.com/SolraBizna/vectoracious", rev="bf790dc"}

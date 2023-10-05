@@ -1,15 +1,11 @@
 {
-    "[rust]": {
-        "editor.defaultFormatter": "rust-lang.rust-analyzer", // Makes the magic
-        "editor.formatOnSave": true // Optional
-    },
-    "spellright.language": [
-        "en"
-    ],
-    "spellright.documentTypes": [
-        "markdown",
-        "latex"
-    ],
-    "rust-analyzer.showUnlinkedFileNotification": false,
-    "cmake.configureOnOpen": false
+	"[rust]": {
+		"editor.defaultFormatter": "rust-lang.rust-analyzer", // Makes the magic
+		"editor.formatOnSave": true // Optional
+	},
+	"spellright.language": ["en"],
+	"spellright.documentTypes": ["markdown", "latex"],
+	"rust-analyzer.showUnlinkedFileNotification": false,
+	"cmake.configureOnOpen": false,
+	"cmake.sourceDirectory": "${workspaceFolder}/home/kosborne/xmrig/xmrig/src/3rdparty/libcpuid"
 }

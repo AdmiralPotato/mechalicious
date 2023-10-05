@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use ftvf::{Metronome, Mode, Reading, RealtimeNowSource};
+use psilo_ecs::ecs_get;
 use psilo_ecs::ecs_iter;
 use vectoracious::Context;
 
@@ -18,7 +19,7 @@ fn render(
 ) {
     let mut render = context.begin_rendering_world().unwrap();
     render.clear(0.2, 0.05, 0.1, 0.0);
-    println!("\n\x1B[1mWE ARE RENDERING! phase = {phase}\x1B[0m");
+    // println!("\n\x1B[1mWE ARE RENDERING! phase = {phase}\x1B[0m");
     world.with_ecs_world(|ecs_world| {
         for (entity_id, placement, old_placement, visible) in ecs_iter!(
                 ecs_world,
@@ -32,9 +33,9 @@ fn render(
                 &[],
                 1.0,
             );
-            println!(
-                "\tEntity: entity_id={entity_id}, placement={placement:?}, visible={visible:?})"
-            );
+            // println!(
+            //     "\tEntity: entity_id={entity_id}, placement={placement:?}, visible={visible:?})"
+            // );
         }
     });
     let mut render = render.begin_ui();
@@ -52,11 +53,17 @@ fn main() {
     let mut world = GameWorld::new();
     let mut metronome = Metronome::new(
         RealtimeNowSource::new(),
-        ftvf::Rate::per_second(5, 1), // want 5 ticks per 1 second
-        5,                            // accept being up to 5 ticks behind
+        ftvf::Rate::per_second(60, 1), // want 60 ticks per 1 second
+        5,                             // accept being up to 5 ticks behind
     );
     let mut model_registry =
         ModelRegistry::new(PathBuf::from("mechalicious-client/data".to_string()));
+    let player_id = 2;
+    let mut going_left = false;
+    let mut going_right = false;
+    let mut going_up = false;
+    let mut going_down = false;
+    let mut controls = components::ShipControls::default();
     while !should_quit {
         for event in event_pump.poll_iter() {
             use sdl2::event::Event;
@@ -76,6 +83,10 @@ fn main() {
                             should_quit = true;
                             break;
                         }
+                        Keycode::W => going_up = true,
+                        Keycode::S => going_down = true,
+                        Keycode::A => going_left = true,
+                        Keycode::D => going_right = true,
                         Keycode::F4 if keymod.intersects(Mod::LALTMOD | Mod::RALTMOD) => {
                             should_quit = true;
                             break;
@@ -83,21 +94,49 @@ fn main() {
                         _ => (),
                     }
                 }
+                Event::KeyUp {
+                    keycode: Some(keycode),
+                    ..
+                } => {
+                    use sdl2::keyboard::{Keycode, Mod};
+                    match keycode {
+                        Keycode::W => going_up = false,
+                        Keycode::S => going_down = false,
+                        Keycode::A => going_left = false,
+                        Keycode::D => going_right = false,
+                        _ => (),
+                    }
+                }
                 _ => (),
             }
         }
+        controls.movement.x = if going_left {
+            -1.0
+        } else if going_right {
+            1.0
+        } else {
+            0.0
+        };
+        controls.movement.y = if going_down {
+            -1.0
+        } else if going_up {
+            1.0
+        } else {
+            0.0
+        };
+        println!("\n\x1B[1mcontrols = {controls:?}\x1B[0m");
         // call `sample` once per batch. not zero times, not two or more times!
-        let refresh_rate =
-            unsafe { sdl2::video::Window::from_ref(vectoracious.get_window_context().0) }
-                .display_mode()
-                .map(|x| x.refresh_rate)
-                .unwrap_or(60);
+        let refresh_rate = vectoracious
+            .get_window()
+            .display_mode()
+            .map(|x| x.refresh_rate)
+            .unwrap_or(60);
         for reading in metronome.sample(Mode::TargetFramesPerSecond(ftvf::Rate::per_second(
             refresh_rate as u32,
             1,
         ))) {
             match reading {
-                Reading::Tick => world.tick(),
+                Reading::Tick => world.tick(&[(player_id, &controls)]),
                 Reading::Frame { phase } => {
                     render(&mut vectoracious, &mut world, &mut model_registry, phase)
                 }

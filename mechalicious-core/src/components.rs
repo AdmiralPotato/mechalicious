@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Placement {
     pub position: Point,
     pub angle: f32,
@@ -8,17 +8,26 @@ pub struct Placement {
 }
 
 impl Placement {
-    pub fn to_transform(&self) -> Transform {
+    pub fn get_transform(&self) -> Transform {
         let similarity = Similarity::new(self.position.coords, self.angle, self.scale);
         Transform::from_matrix_unchecked(similarity.to_homogeneous())
     }
-    pub fn to_phased_transform(&self, prev_state: &Placement, phase: f32) -> Transform {
+    pub fn get_inverse_transform(&self) -> Transform {
+        let similarity = Similarity::new(-self.position.coords, -self.angle, 1.0 / self.scale);
+        Transform::from_matrix_unchecked(similarity.to_homogeneous())
+    }
+    pub fn get_phased_transform(&self, prev_state: &Placement, phase: f32) -> Transform {
         let phased_position = prev_state.position.coords
             + (self.position.coords - prev_state.position.coords) * phase;
         let phased_angle = angle_lerp(prev_state.angle, self.angle, phase);
         //prev_state.angle + (self.angle - prev_state.angle) * phase;
         let similarity = Similarity::new(phased_position, phased_angle, self.scale);
         Transform::from_matrix_unchecked(similarity.to_homogeneous())
+    }
+    pub fn lerp_toward(&mut self, target: &Placement, theta: f32) {
+        self.position = lerp(self.position.coords, target.position.coords, theta).into();
+        self.scale = lerp(self.scale, target.scale, theta);
+        self.angle = angle_lerp(self.angle, target.angle, theta);
     }
 }
 

@@ -1,4 +1,7 @@
-use std::f32::consts::{PI, TAU};
+use std::{
+    f32::consts::{PI, TAU},
+    ops::{Add, Mul},
+};
 
 use psilo_ecs::*;
 
@@ -38,6 +41,10 @@ pub fn angle_lerp(a: f32, b: f32, theta: f32) -> f32 {
         delta
     };
     a + (delta * theta)
+}
+
+pub fn lerp<T: Mul<f32, Output = T> + Add<T, Output = T>>(a: T, b: T, theta: f32) -> T {
+    (a * (1.0 - theta)) + (b * theta)
 }
 
 pub struct GameWorld {

@@ -1,8 +1,7 @@
 use std::path::PathBuf;
 
 use ftvf::{Metronome, Mode, Reading, RealtimeNowSource};
-use psilo_ecs::ecs_get;
-use psilo_ecs::ecs_iter;
+use psilo_ecs::{ecs_get, ecs_iter, EntityId};
 use vectoracious::Context;
 
 use mechalicious_core::components;
@@ -11,12 +10,34 @@ use mechalicious_core::GameWorld;
 mod model_registry;
 use model_registry::ModelRegistry;
 
+struct ClientState {
+    camera_state: components::Placement,
+    camera_target: components::Placement,
+    camera_tracked_entity_id: EntityId,
+}
+
+impl ClientState {
+    fn tick(&mut self, world: &mut GameWorld) {
+        // Update the camera target based on the tracked entity
+        world.with_ecs_world(|world| {
+            match ecs_get!(world, self.camera_tracked_entity_id, cur components::Placement) {
+                Some(x) => self.camera_target.position = x.position,
+                _ => {}
+            }
+        });
+        // Update the camera state based on the camera target
+        self.camera_state.lerp_toward(&self.camera_target, 0.5);
+    }
+}
+
 fn render(
     context: &mut Context,
     world: &mut GameWorld, // MAKE THIS NOT MUT NEXT TIME SOLRA WILL FIX IT
     model_registry: &mut ModelRegistry,
     phase: f32,
+    client_state: &ClientState,
 ) {
+    let camera_transform = client_state.camera_state.get_inverse_transform();
     let mut render = context.begin_rendering_world().unwrap();
     render.clear(0.2, 0.05, 0.1, 0.0);
     // println!("\n\x1B[1mWE ARE RENDERING! phase = {phase}\x1B[0m");
@@ -29,7 +50,7 @@ fn render(
         ) {
             render.model(
                 model_registry.get_model(visible.model_path),
-                &placement.to_phased_transform(&old_placement, phase),
+                &(camera_transform * placement.get_phased_transform(&old_placement, phase)),
                 &[],
                 1.0,
             );
@@ -59,6 +80,13 @@ fn main() {
     let mut model_registry =
         ModelRegistry::new(PathBuf::from("mechalicious-client/data".to_string()));
     let player_id = 3;
+    let mut client_state = ClientState {
+        camera_state: components::Placement::default(),
+        camera_target: components::Placement::default(),
+        camera_tracked_entity_id: player_id,
+    };
+    client_state.camera_state.scale = 16.0;
+    client_state.camera_target.scale = 1.0;
     let mut going_left = false;
     let mut going_right = false;
     let mut going_up = false;
@@ -136,10 +164,18 @@ fn main() {
             1,
         ))) {
             match reading {
-                Reading::Tick => world.tick(&[(player_id, &controls)]),
-                Reading::Frame { phase } => {
-                    render(&mut vectoracious, &mut world, &mut model_registry, phase)
+                Reading::Tick => {
+                    world.tick(&[(player_id, &controls)]);
+                    // do camera???
+                    client_state.tick(&mut world);
                 }
+                Reading::Frame { phase } => render(
+                    &mut vectoracious,
+                    &mut world,
+                    &mut model_registry,
+                    phase,
+                    &client_state,
+                ),
                 Reading::TimeWentBackwards => eprintln!("Warning: time flowed backwards!"),
                 Reading::TicksLost => eprintln!("Warning: we're too slow, lost some ticks!"),
                 // Mode::UnlimitedFrames never returns Idle, but other modes can, and

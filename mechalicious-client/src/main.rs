@@ -4,11 +4,11 @@ use ftvf::{Metronome, Mode, Reading, RealtimeNowSource};
 use psilo_ecs::{ecs_get, ecs_iter, EntityId};
 use vectoracious::Context;
 
-use mechalicious_core::components;
-use mechalicious_core::GameWorld;
+use mechalicious_core::{components, GameWorld, Transform};
 
 mod model_registry;
 use model_registry::ModelRegistry;
+use vectoracious::Scale;
 
 struct ClientState {
     camera_state: components::Placement,
@@ -37,7 +37,16 @@ fn render(
     phase: f32,
     client_state: &ClientState,
 ) {
-    let camera_transform = client_state.camera_state.get_inverse_transform();
+    let (width, height) = context.get_window().drawable_size();
+    let aspect_correction = if width > height {
+        // do a thing
+        Scale::new(height as f32 / width as f32, 1.0)
+    } else {
+        // do the sideways of that thing
+        Scale::new(1.0, width as f32 / height as f32)
+    };
+    let aspect_correction = Transform::from_matrix_unchecked(aspect_correction.to_homogeneous());
+    let camera_transform = aspect_correction * client_state.camera_state.get_inverse_transform();
     let mut render = context.begin_rendering_world().unwrap();
     render.clear(0.2, 0.05, 0.1, 0.0);
     // println!("\n\x1B[1mWE ARE RENDERING! phase = {phase}\x1B[0m");
@@ -67,7 +76,7 @@ fn main() {
     let sdl = sdl2::init().unwrap();
     let video = sdl.video().unwrap();
     let mut event_pump = sdl.event_pump().unwrap();
-    let windowbuilder = || video.window("battle girl^H^H^H^H^H^H^H^H^H^H^Hmechalicious", 640, 480);
+    let windowbuilder = || video.window("battle girl^H^H^H^H^H^H^H^H^H^H^Hmechalicious", 640, 960);
     let mut vectoracious = vectoracious::Context::initialize(&video, windowbuilder)
         .expect("Couldn't initialize vectoracious. Bummer!");
     let mut should_quit = false;

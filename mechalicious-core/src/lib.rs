@@ -11,6 +11,8 @@ pub type Point = nalgebra::Point2<f32>;
 pub type Vector = nalgebra::Vector2<f32>;
 pub type Transform = nalgebra::Transform2<f32>;
 pub type Similarity = nalgebra::Similarity2<f32>;
+pub type Affine = nalgebra::Affine2<f32>;
+pub type Scale = nalgebra::Scale2<f32>;
 /*
 
 Note for future Admiral: If you find yourself needing to turn a Point into a
@@ -171,4 +173,20 @@ impl GameWorld {
         self.ecs_world
             .with_origin(self.prev_ecs_world.clone(), |x| handler(x))
     }
+}
+
+pub fn similarity_to_transform(similarity: Similarity) -> Transform {
+    Transform::from_matrix_unchecked(similarity.to_homogeneous())
+}
+
+pub fn similarity_to_affine(similarity: Similarity) -> Affine {
+    Affine::from_matrix_unchecked(similarity.to_homogeneous())
+}
+
+pub fn scale_to_affine(scale: Scale) -> Affine {
+    Affine::from_matrix_unchecked(scale.to_homogeneous())
+}
+
+pub fn affine_to_transform(affine: Affine) -> Transform {
+    Transform::from_matrix_unchecked(affine.to_homogeneous())
 }

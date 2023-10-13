@@ -8,13 +8,8 @@ pub struct Placement {
 }
 
 impl Placement {
-    pub fn get_transform(&self) -> Transform {
-        let similarity = Similarity::new(self.position.coords, self.angle, self.scale);
-        Transform::from_matrix_unchecked(similarity.to_homogeneous())
-    }
-    pub fn get_inverse_transform(&self) -> Transform {
-        let similarity = Similarity::new(self.position.coords, self.angle, self.scale);
-        Transform::from_matrix_unchecked(similarity.inverse().to_homogeneous())
+    pub fn as_similarity(&self) -> Similarity {
+        Similarity::new(self.position.coords, self.angle, self.scale)
     }
     pub fn get_phased_transform(&self, prev_state: &Placement, phase: f32) -> Transform {
         let phased_position = prev_state.position.coords

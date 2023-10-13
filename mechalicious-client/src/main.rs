@@ -4,16 +4,16 @@ use ftvf::{Metronome, Mode, Reading, RealtimeNowSource};
 use psilo_ecs::{ecs_get, ecs_iter, EntityId};
 use vectoracious::Context;
 
-use mechalicious_core::{components, GameWorld, Transform};
+use mechalicious_core::*;
 
 mod model_registry;
 use model_registry::ModelRegistry;
-use vectoracious::Scale;
-
 struct ClientState {
     camera_state: components::Placement,
     camera_target: components::Placement,
     camera_tracked_entity_id: EntityId,
+    cursor_position: components::Placement,
+    vectoracious: vectoracious::Context,
 }
 
 impl ClientState {
@@ -28,48 +28,62 @@ impl ClientState {
         // Update the camera state based on the camera target
         self.camera_state.lerp_toward(&self.camera_target, 0.5);
     }
-}
 
-fn render(
-    context: &mut Context,
-    world: &mut GameWorld, // MAKE THIS NOT MUT NEXT TIME SOLRA WILL FIX IT
-    model_registry: &mut ModelRegistry,
-    phase: f32,
-    client_state: &ClientState,
-) {
-    let (width, height) = context.get_window().drawable_size();
-    let aspect_correction = if width > height {
-        // do a thing
-        Scale::new(height as f32 / width as f32, 1.0)
-    } else {
-        // do the sideways of that thing
-        Scale::new(1.0, width as f32 / height as f32)
-    };
-    let aspect_correction = Transform::from_matrix_unchecked(aspect_correction.to_homogeneous());
-    let camera_transform = aspect_correction * client_state.camera_state.get_inverse_transform();
-    let mut render = context.begin_rendering_world().unwrap();
-    render.clear(0.2, 0.05, 0.1, 0.0);
-    // println!("\n\x1B[1mWE ARE RENDERING! phase = {phase}\x1B[0m");
-    world.with_ecs_world(|ecs_world| {
-        for (entity_id, placement, old_placement, visible) in ecs_iter!(
-                ecs_world,
-                cur components::Placement,
-                prev components::Placement,
-                cur components::Visible,
-        ) {
-            render.model(
-                model_registry.get_model(visible.model_path),
-                &(camera_transform * placement.get_phased_transform(&old_placement, phase)),
-                &[],
-                1.0,
-            );
-            // println!(
-            //     "\tEntity: entity_id={entity_id}, placement={placement:?}, visible={visible:?})"
-            // );
-        }
-    });
-    let mut render = render.begin_ui();
-    render.end_rendering();
+    fn get_camera_affine(&self) -> Affine {
+        let (width, height) = self.vectoracious.get_window().drawable_size();
+        let aspect_correction = if width > height {
+            // do a thing
+            Scale::new(height as f32 / width as f32, 1.0)
+        } else {
+            // do the sideways of that thing
+            Scale::new(1.0, width as f32 / height as f32)
+        };
+        scale_to_affine(aspect_correction)
+            * similarity_to_affine(self.camera_state.as_similarity().inverse())
+    }
+
+    fn render(
+        &mut self,
+        world: &mut GameWorld, // MAKE THIS NOT MUT NEXT TIME SOLRA WILL FIX IT
+        model_registry: &mut ModelRegistry,
+        phase: f32,
+    ) {
+        let camera_transform = affine_to_transform(self.get_camera_affine());
+        let mut render = self.vectoracious.begin_rendering_world().unwrap();
+        render.clear(0.2, 0.05, 0.1, 0.0);
+        // println!("\n\x1B[1mWE ARE RENDERING! phase = {phase}\x1B[0m");
+        world.with_ecs_world(|ecs_world| {
+            for (entity_id, placement, old_placement, visible) in ecs_iter!(
+                    ecs_world,
+                    cur components::Placement,
+                    prev components::Placement,
+                    cur components::Visible,
+            ) {
+                render.model(
+                    model_registry.get_model(visible.model_path),
+                    &(camera_transform
+                        * Transform::from_matrix_unchecked(
+                            placement
+                                .get_phased_transform(&old_placement, phase)
+                                .to_homogeneous(),
+                        )),
+                    &[],
+                    1.0,
+                );
+                // println!(
+                //     "\tEntity: entity_id={entity_id}, placement={placement:?}, visible={visible:?})"
+                // );
+            }
+        });
+        let mut render = render.begin_ui();
+        render.model(
+            model_registry.get_model("cursor.v2d"),
+            &(camera_transform * self.cursor_position.as_similarity()),
+            &[],
+            1.0,
+        );
+        render.end_rendering();
+    }
 }
 
 fn main() {
@@ -93,7 +107,10 @@ fn main() {
         camera_state: components::Placement::default(),
         camera_target: components::Placement::default(),
         camera_tracked_entity_id: player_id,
+        cursor_position: components::Placement::default(),
+        vectoracious: vectoracious,
     };
+    client_state.cursor_position.scale = 0.1;
     client_state.camera_state.scale = 16.0;
     client_state.camera_target.scale = 1.0;
     let mut going_left = false;
@@ -102,6 +119,7 @@ fn main() {
     let mut going_down = false;
     let mut controls = components::ShipControls::default();
     while !should_quit {
+        let (width, height) = client_state.vectoracious.get_window().drawable_size();
         for event in event_pump.poll_iter() {
             use sdl2::event::Event;
             match event {
@@ -144,6 +162,24 @@ fn main() {
                         _ => (),
                     }
                 }
+                Event::MouseMotion {
+                    timestamp,
+                    window_id,
+                    which,
+                    mousestate,
+                    x,
+                    y,
+                    xrel,
+                    yrel,
+                } => {
+                    // get the camera transform, use it to transform x and y
+                    let x = (x as f32) / (width as f32 * 0.5) - 1.0;
+                    let y = (y as f32) / (height as f32 * -0.5) + 1.0;
+                    let inversed_camera_transform =
+                        affine_to_transform(client_state.get_camera_affine().inverse());
+                    client_state.cursor_position.position =
+                        inversed_camera_transform.transform_point(&Point::new(x, y));
+                }
                 _ => (),
             }
         }
@@ -163,7 +199,8 @@ fn main() {
         };
         // println!("\n\x1B[1mcontrols = {controls:?}\x1B[0m");
         // call `sample` once per batch. not zero times, not two or more times!
-        let refresh_rate = vectoracious
+        let refresh_rate = client_state
+            .vectoracious
             .get_window()
             .display_mode()
             .map(|x| x.refresh_rate)
@@ -178,13 +215,9 @@ fn main() {
                     // do camera???
                     client_state.tick(&mut world);
                 }
-                Reading::Frame { phase } => render(
-                    &mut vectoracious,
-                    &mut world,
-                    &mut model_registry,
-                    phase,
-                    &client_state,
-                ),
+                Reading::Frame { phase } => {
+                    client_state.render(&mut world, &mut model_registry, phase)
+                }
                 Reading::TimeWentBackwards => eprintln!("Warning: time flowed backwards!"),
                 Reading::TicksLost => eprintln!("Warning: we're too slow, lost some ticks!"),
                 // Mode::UnlimitedFrames never returns Idle, but other modes can, and

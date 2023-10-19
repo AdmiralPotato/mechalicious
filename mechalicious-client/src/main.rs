@@ -29,7 +29,7 @@ impl ClientState {
         self.camera_state.lerp_toward(&self.camera_target, 0.5);
     }
 
-    fn get_camera_affine(&self) -> Affine {
+    fn get_aspect_ratio_affine(&self) -> Affine {
         let (width, height) = self.vectoracious.get_window().drawable_size();
         let aspect_correction = if width > height {
             // do a thing
@@ -39,6 +39,10 @@ impl ClientState {
             Scale::new(1.0, width as f32 / height as f32)
         };
         scale_to_affine(aspect_correction)
+    }
+
+    fn get_camera_affine(&self) -> Affine {
+        self.get_aspect_ratio_affine()
             * similarity_to_affine(self.camera_state.as_similarity().inverse())
     }
 
@@ -49,6 +53,7 @@ impl ClientState {
         phase: f32,
     ) {
         self.vectoracious.render_params.ui_oversamples = 2;
+        let affine = self.get_aspect_ratio_affine();
         let camera_transform = affine_to_transform(self.get_camera_affine());
         let mut render = self.vectoracious.begin_rendering_world().unwrap();
         render.clear(0.2, 0.05, 0.1, 0.0);
@@ -79,7 +84,7 @@ impl ClientState {
         let mut render = render.begin_ui();
         render.model(
             model_registry.get_model("cursor.v2d"),
-            &(camera_transform * self.cursor_position.as_similarity()),
+            &affine_to_transform(self.cursor_position.as_similarity() * affine),
             &[],
             1.0,
         );
@@ -183,10 +188,7 @@ fn main() {
                     // get the camera transform, use it to transform x and y
                     let x = (x as f32) / (width as f32 * 0.5) - 1.0;
                     let y = (y as f32) / (height as f32 * -0.5) + 1.0;
-                    let inversed_camera_transform =
-                        affine_to_transform(client_state.get_camera_affine().inverse());
-                    client_state.cursor_position.position =
-                        inversed_camera_transform.transform_point(&Point::new(x, y));
+                    client_state.cursor_position.position = Point::new(x, y);
                 }
                 _ => (),
             }

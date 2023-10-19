@@ -13,6 +13,7 @@ pub type Transform = nalgebra::Transform2<f32>;
 pub type Similarity = nalgebra::Similarity2<f32>;
 pub type Affine = nalgebra::Affine2<f32>;
 pub type Scale = nalgebra::Scale2<f32>;
+pub type Translation = nalgebra::Translation2<f32>;
 /*
 
 Note for future Admiral: If you find yourself needing to turn a Point into a

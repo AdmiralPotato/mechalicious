@@ -48,6 +48,7 @@ impl ClientState {
         model_registry: &mut ModelRegistry,
         phase: f32,
     ) {
+        self.vectoracious.render_params.ui_oversamples = 2;
         let camera_transform = affine_to_transform(self.get_camera_affine());
         let mut render = self.vectoracious.begin_rendering_world().unwrap();
         render.clear(0.2, 0.05, 0.1, 0.0);
@@ -87,10 +88,11 @@ impl ClientState {
 }
 
 fn main() {
+    env_logger::init();
     let sdl = sdl2::init().unwrap();
     let video = sdl.video().unwrap();
     let mut event_pump = sdl.event_pump().unwrap();
-    let windowbuilder = || video.window("battle girl^H^H^H^H^H^H^H^H^H^H^Hmechalicious", 640, 960);
+    let windowbuilder = || video.window("battle girl^H^H^H^H^H^H^H^H^H^H^Hmechalicious", 960, 640);
     let mut vectoracious = vectoracious::Context::initialize(&video, windowbuilder)
         .expect("Couldn't initialize vectoracious. Bummer!");
     let mut should_quit = false;
@@ -104,15 +106,21 @@ fn main() {
         ModelRegistry::new(PathBuf::from("mechalicious-client/data".to_string()));
     let player_id = 3;
     let mut client_state = ClientState {
-        camera_state: components::Placement::default(),
-        camera_target: components::Placement::default(),
+        camera_state: components::Placement {
+            scale: 016.0,
+            ..Default::default()
+        },
+        camera_target: components::Placement {
+            scale: 1.0,
+            ..Default::default()
+        },
         camera_tracked_entity_id: player_id,
-        cursor_position: components::Placement::default(),
-        vectoracious: vectoracious,
+        cursor_position: components::Placement {
+            scale: 0.1,
+            ..Default::default()
+        },
+        vectoracious,
     };
-    client_state.cursor_position.scale = 0.1;
-    client_state.camera_state.scale = 16.0;
-    client_state.camera_target.scale = 1.0;
     let mut going_left = false;
     let mut going_right = false;
     let mut going_up = false;

@@ -131,6 +131,7 @@ fn main() {
     let mut going_up = false;
     let mut going_down = false;
     let mut controls = components::ShipControls::default();
+    sdl.mouse().show_cursor(false);
     while !should_quit {
         let (width, height) = client_state.vectoracious.get_window().drawable_size();
         for event in event_pump.poll_iter() {

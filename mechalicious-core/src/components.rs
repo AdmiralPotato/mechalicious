@@ -40,6 +40,9 @@ impl Physics {
     pub fn apply_force(&mut self, force: Vector) {
         self.force += force;
     }
+    pub fn apply_torque(&mut self, torque: f32) {
+        self.torque += torque;
+    }
 }
 
 #[derive(Clone, Debug)]

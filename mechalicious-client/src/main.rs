@@ -208,6 +208,9 @@ fn main() {
         } else {
             0.0
         };
+        controls.aim = (client_state.get_aspect_ratio_affine().inverse()
+            * client_state.cursor_position.position)
+            .coords;
         // println!("\n\x1B[1mcontrols = {controls:?}\x1B[0m");
         // call `sample` once per batch. not zero times, not two or more times!
         let refresh_rate = client_state

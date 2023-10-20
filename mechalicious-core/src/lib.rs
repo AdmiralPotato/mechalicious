@@ -32,9 +32,9 @@ use rand::prelude::*;
 pub mod components;
 use components::*;
 
-pub fn angle_lerp(a: f32, b: f32, theta: f32) -> f32 {
+pub fn angle_subtract(a: f32, b: f32) -> f32 {
     let delta = b - a;
-    let delta = if delta.abs() >= PI {
+    if delta.abs() >= PI {
         if delta > 0.0 {
             delta - TAU
         } else {
@@ -42,7 +42,11 @@ pub fn angle_lerp(a: f32, b: f32, theta: f32) -> f32 {
         }
     } else {
         delta
-    };
+    }
+}
+
+pub fn angle_lerp(a: f32, b: f32, theta: f32) -> f32 {
+    let delta = angle_subtract(a, b);
     a + (delta * theta)
 }
 
@@ -96,7 +100,7 @@ impl GameWorld {
                 force: vector![0.0, 0.0],
                 torque: 0.0,
                 velocity: vector![0.0, 0.0],
-                angular_velocity: 0.01,
+                angular_velocity: 0.0,
             },
             ShipControls {
                 movement: vector![0.0, 0.0],
@@ -141,10 +145,15 @@ impl GameWorld {
                 }
             }
             // Ship Controls System
-            for (_entity_id, _placement, controls, physics) in
-                ecs_iter!(world, cur Placement, cur ShipControls, mut Physics)
+            for (_entity_id, placement, controls, physics) in
+                ecs_iter!(world, mut Placement, cur ShipControls, mut Physics)
             {
                 physics.apply_force(controls.movement * 0.005);
+                // let facing_angle = placement.angle;
+                let aim_angle = controls.aim.y.atan2(controls.aim.x);
+                // let diff = angle_subtract(facing_angle, aim_angle);
+                placement.angle = aim_angle;
+                // physics.apply_torque(diff * 0.005);
             }
             // Physics System
             let world_physics = ecs_singleton!(world, cur WorldPhysics);
@@ -154,6 +163,14 @@ impl GameWorld {
                 if drag_amount != 0.0 {
                     physics.apply_force(physics.velocity.normalize() * drag_amount);
                 }
+                // TODO: angular fiziks
+                /*
+                let angular_drag_amount =
+                    physics.angular_velocity.abs() * physics.angular_velocity * -0.1;
+                if angular_drag_amount != 0.0 {
+                    physics.apply_torque(angular_drag_amount);
+                }
+                */
                 let linear_acceleration = physics.force / physics.mass;
                 let angular_acceleration = physics.torque / physics.moment;
                 position.position += physics.velocity + linear_acceleration * 0.5;

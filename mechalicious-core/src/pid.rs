@@ -34,10 +34,11 @@ impl PidController {
 
 impl Default for PidController {
     fn default() -> Self {
+        // By default, we're more like a PD controller.
         Self {
             proportional_coefficient: 1.0,
-            integral_coefficient: 1.0,
-            derivative_coefficient: 1.0,
+            integral_coefficient: 0.0,
+            derivative_coefficient: 10.0,
             integral: 0.0,
         }
     }

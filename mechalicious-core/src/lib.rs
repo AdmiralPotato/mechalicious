@@ -66,7 +66,6 @@ pub struct GameWorld {
 
 impl GameWorld {
     pub fn new() -> GameWorld {
-        const AIM_PID_CONTROLLER: PidController = PidController::new(1.0, 0.0, 10.0);
         let mut ecs_world = EcsWorld::with_blank_schema();
         ecs_spawn!(ecs_world, WorldPhysics { air_thickness: 5.4 },);
         ecs_spawn!(
@@ -89,9 +88,7 @@ impl GameWorld {
                 aim: vector![0.0, 0.0],
                 fire: false,
             },
-            ShipControlCharacteristics {
-                aim_controller: AIM_PID_CONTROLLER,
-            },
+            ShipControlCharacteristics::default(),
             Visible {
                 model_path: "mechalicious.v2d",
             },
@@ -116,9 +113,7 @@ impl GameWorld {
                 aim: vector![0.0, 0.0],
                 fire: false,
             },
-            ShipControlCharacteristics {
-                aim_controller: AIM_PID_CONTROLLER,
-            },
+            ShipControlCharacteristics::default(),
             Visible {
                 model_path: "mechalicious.v2d",
             },

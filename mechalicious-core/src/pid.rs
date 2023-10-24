@@ -38,7 +38,7 @@ impl Default for PidController {
         Self {
             proportional_coefficient: 1.0,
             integral_coefficient: 0.0,
-            derivative_coefficient: 10.0,
+            derivative_coefficient: 5.0,
             integral: 0.0,
         }
     }

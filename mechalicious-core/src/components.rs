@@ -57,6 +57,11 @@ pub struct ShipControls {
     pub fire: bool,
 }
 
+#[derive(Clone, Debug, Default)]
+pub struct ShipControlCharacteristics {
+    pub aim_controller: PidController,
+}
+
 #[derive(Clone, Debug)]
 pub struct WorldPhysics {
     pub air_thickness: f32,

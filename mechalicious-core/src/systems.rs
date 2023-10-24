@@ -13,14 +13,14 @@ impl GameWorld {
                 }
             }
             // Ship Controls System
-            for (_entity_id, placement, controls, physics) in
-                ecs_iter!(world, mut Placement, cur ShipControls, mut Physics)
+            for (_entity_id, placement, controls, control_characteristics, physics) in
+                ecs_iter!(world, mut Placement, cur ShipControls, mut ShipControlCharacteristics, mut Physics)
             {
                 physics.apply_force(controls.movement * 0.005);
                 let facing_angle = placement.angle;
                 let aim_angle = controls.aim.y.atan2(controls.aim.x);
-                let diff = angle_subtract(facing_angle, aim_angle);
-                physics.apply_torque(diff * 0.005);
+                let diff = angle_subtract(aim_angle, facing_angle);
+                physics.apply_torque(control_characteristics.aim_controller.get_control_output(diff, physics.angular_velocity) * 0.05);
             }
             // Physics System
             let world_physics = ecs_singleton!(world, cur WorldPhysics);

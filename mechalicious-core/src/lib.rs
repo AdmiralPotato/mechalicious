@@ -29,13 +29,16 @@ use rand::prelude::*;
 // but if we do: pub use components::*
 // then our dependencies can also use: mechalicious_core::Position
 
+pub mod pid;
+use pid::*;
+
 pub mod components;
 use components::*;
 
 mod systems;
 
 pub fn angle_subtract(a: f32, b: f32) -> f32 {
-    let delta = b - a;
+    let delta = a - b;
     if delta.abs() >= PI {
         if delta > 0.0 {
             delta - TAU
@@ -48,7 +51,7 @@ pub fn angle_subtract(a: f32, b: f32) -> f32 {
 }
 
 pub fn angle_lerp(a: f32, b: f32, theta: f32) -> f32 {
-    let delta = angle_subtract(a, b);
+    let delta = angle_subtract(b, a);
     a + (delta * theta)
 }
 
@@ -63,6 +66,7 @@ pub struct GameWorld {
 
 impl GameWorld {
     pub fn new() -> GameWorld {
+        const AIM_PID_CONTROLLER: PidController = PidController::new(1.0, 0.0, 10.0);
         let mut ecs_world = EcsWorld::with_blank_schema();
         ecs_spawn!(ecs_world, WorldPhysics { air_thickness: 5.4 },);
         ecs_spawn!(
@@ -83,7 +87,10 @@ impl GameWorld {
             ShipControls {
                 movement: vector![0.0, 0.0],
                 aim: vector![0.0, 0.0],
-                fire: false
+                fire: false,
+            },
+            ShipControlCharacteristics {
+                aim_controller: AIM_PID_CONTROLLER,
             },
             Visible {
                 model_path: "mechalicious.v2d",
@@ -107,7 +114,10 @@ impl GameWorld {
             ShipControls {
                 movement: vector![0.0, 0.0],
                 aim: vector![0.0, 0.0],
-                fire: false
+                fire: false,
+            },
+            ShipControlCharacteristics {
+                aim_controller: AIM_PID_CONTROLLER,
             },
             Visible {
                 model_path: "mechalicious.v2d",

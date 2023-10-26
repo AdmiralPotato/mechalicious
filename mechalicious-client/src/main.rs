@@ -20,13 +20,17 @@ impl ClientState {
     fn tick(&mut self, world: &mut GameWorld) {
         // Update the camera target based on the tracked entity
         world.with_ecs_world(|world| {
-            match ecs_get!(world, self.camera_tracked_entity_id, cur components::Placement) {
-                Some(x) => self.camera_target.position = x.position,
+            match ecs_get!(world, self.camera_tracked_entity_id, cur components::Placement, cur Option<components::Physics>) {
+                Some((placement, physics)) => {
+                    self.camera_target.position = placement.position
+                        + physics.map(|physics| physics.velocity * 50.0)
+                            .unwrap_or(Default::default());
+                }
                 _ => {}
             }
         });
         // Update the camera state based on the camera target
-        self.camera_state.lerp_toward(&self.camera_target, 0.5);
+        self.camera_state.lerp_toward(&self.camera_target, 0.05);
     }
 
     fn get_aspect_ratio_affine(&self) -> Affine {
@@ -112,11 +116,11 @@ fn main() {
     let player_id = 3;
     let mut client_state = ClientState {
         camera_state: components::Placement {
-            scale: 016.0,
+            scale: 16.0,
             ..Default::default()
         },
         camera_target: components::Placement {
-            scale: 1.0,
+            scale: 3.0,
             ..Default::default()
         },
         camera_tracked_entity_id: player_id,

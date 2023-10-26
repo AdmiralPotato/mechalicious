@@ -30,14 +30,6 @@ impl GameWorld {
                 if drag_amount != 0.0 {
                     physics.apply_force(physics.velocity.normalize() * drag_amount);
                 }
-                // TODO: angular fiziks
-                /*
-                let angular_drag_amount =
-                    physics.angular_velocity.abs() * physics.angular_velocity * -0.1;
-                if angular_drag_amount != 0.0 {
-                    physics.apply_torque(angular_drag_amount);
-                }
-                */
                 let linear_acceleration = physics.force / physics.mass;
                 let angular_acceleration = physics.torque / physics.moment;
                 position.position += physics.velocity + linear_acceleration * 0.5;

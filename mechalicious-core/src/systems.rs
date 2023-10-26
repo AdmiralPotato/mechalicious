@@ -34,7 +34,7 @@ impl GameWorld {
                 let angular_acceleration = physics.torque / physics.moment;
                 position.position += physics.velocity + linear_acceleration * 0.5;
                 position.angle += physics.angular_velocity + angular_acceleration * 0.5;
-                position.angle = position.angle % TAU;
+                position.angle %= TAU;
                 physics.velocity += linear_acceleration;
                 physics.angular_velocity += angular_acceleration;
                 // zero out the forces for next tick

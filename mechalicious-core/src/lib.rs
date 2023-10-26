@@ -65,7 +65,7 @@ pub struct GameWorld {
 }
 
 impl GameWorld {
-    pub fn new() -> GameWorld {
+    pub fn new_test_world() -> GameWorld {
         let mut ecs_world = EcsWorld::with_blank_schema();
         ecs_spawn!(ecs_world, WorldPhysics { air_thickness: 5.4 },);
         ecs_spawn!(

@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use ftvf::{Metronome, Mode, Reading, RealtimeNowSource};
 use psilo_ecs::{ecs_get, ecs_iter, EntityId};
-use vectoracious::Context;
 
 use mechalicious_core::*;
 
@@ -20,13 +19,16 @@ impl ClientState {
     fn tick(&mut self, world: &mut GameWorld) {
         // Update the camera target based on the tracked entity
         world.with_ecs_world(|world| {
-            match ecs_get!(world, self.camera_tracked_entity_id, cur components::Placement, cur Option<components::Physics>) {
-                Some((placement, physics)) => {
-                    self.camera_target.position = placement.position
-                        + physics.map(|physics| physics.velocity * 50.0)
-                            .unwrap_or(Default::default());
-                }
-                _ => {}
+            if let Some((placement, physics)) = ecs_get!(
+                world,
+                self.camera_tracked_entity_id,
+                cur components::Placement,
+                cur Option<components::Physics>
+            ) {
+                self.camera_target.position = placement.position
+                    + physics
+                        .map(|physics| physics.velocity * 50.0)
+                        .unwrap_or(Default::default());
             }
         });
         // Update the camera state based on the camera target
@@ -63,7 +65,7 @@ impl ClientState {
         render.clear(0.2, 0.05, 0.1, 0.0);
         // println!("\n\x1B[1mWE ARE RENDERING! phase = {phase}\x1B[0m");
         world.with_ecs_world(|ecs_world| {
-            for (entity_id, placement, old_placement, visible) in ecs_iter!(
+            for (_entity_id, placement, old_placement, visible) in ecs_iter!(
                     ecs_world,
                     cur components::Placement,
                     prev components::Placement,
@@ -74,7 +76,7 @@ impl ClientState {
                     &(camera_transform
                         * Transform::from_matrix_unchecked(
                             placement
-                                .get_phased_transform(&old_placement, phase)
+                                .get_phased_transform(old_placement, phase)
                                 .to_homogeneous(),
                         )),
                     &[],
@@ -102,10 +104,10 @@ fn main() {
     let video = sdl.video().unwrap();
     let mut event_pump = sdl.event_pump().unwrap();
     let windowbuilder = || video.window("battle girl^H^H^H^H^H^H^H^H^H^H^Hmechalicious", 960, 640);
-    let mut vectoracious = vectoracious::Context::initialize(&video, windowbuilder)
+    let vectoracious = vectoracious::Context::initialize(&video, windowbuilder)
         .expect("Couldn't initialize vectoracious. Bummer!");
     let mut should_quit = false;
-    let mut world = GameWorld::new();
+    let mut world = GameWorld::new_test_world();
     let mut metronome = Metronome::new(
         RealtimeNowSource::new(),
         ftvf::Rate::per_second(60, 1), // want 60 ticks per 1 second
@@ -171,7 +173,7 @@ fn main() {
                     keycode: Some(keycode),
                     ..
                 } => {
-                    use sdl2::keyboard::{Keycode, Mod};
+                    use sdl2::keyboard::Keycode;
                     match keycode {
                         Keycode::W => going_up = false,
                         Keycode::S => going_down = false,
@@ -180,16 +182,7 @@ fn main() {
                         _ => (),
                     }
                 }
-                Event::MouseMotion {
-                    timestamp,
-                    window_id,
-                    which,
-                    mousestate,
-                    x,
-                    y,
-                    xrel,
-                    yrel,
-                } => {
+                Event::MouseMotion { x, y, .. } => {
                     // get the camera transform, use it to transform x and y
                     let x = (x as f32) / (width as f32 * 0.5) - 1.0;
                     let y = (y as f32) / (height as f32 * -0.5) + 1.0;

@@ -26,8 +26,7 @@ impl ModelRegistry {
                 .read_to_string(&mut whole_file)
                 .expect("could not read file");
             dbg!(&whole_file);
-            let model = Model::from_v2d(&whole_file).expect("Unable to parse v2d file");
-            model
+            Model::from_v2d(&whole_file).expect("Unable to parse v2d file")
         })
     }
 }
